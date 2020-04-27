@@ -258,7 +258,7 @@ void UpdateFilter::updateChangedRect(Region *rgn, const Rect *rect)
 void UpdateFilter::updateChangedSubRect(Region *rgn, const Rect *rect)
 {
   const UINT bytesPerPixel = m_frameBuffer->getBytesPerPixel();
-  assert(bytesPerPixel == sizeof(UINT32))
+  _ASSERT(bytesPerPixel == sizeof(UINT32));
   int bytes_in_row = (rect->right - rect->left) * bytesPerPixel;
   int y, i;
 
@@ -279,33 +279,36 @@ void UpdateFilter::updateChangedSubRect(Region *rgn, const Rect *rect)
   }
 
   // Exclude unchanged pixels at left and right sides
-  offset = (final_rect.top * bytesPerRow + final_rect.left * bytesPerPixel)/sizeof(UINT32);
-  o_ptr = (UINT32 *)m_frameBuffer->getBuffer() + offset;
-  n_ptr = (UINT32 *)m_screenDriver->getScreenBuffer()->getBuffer() + offset;
-  int uint32_in_row = bytes_in_row / sizeof(UINT32)
-  int left_delta = uint32_in_row - 1;
-  int right_delta = 0;
-  for (int y = final_rect.top; y < final_rect.bottom; y++) {
-    for (int i = 0; i < uint32_in_row - 1; i++) {
-      if (n_ptr[i] != o_ptr[i]) {
-        if (i < left_delta)
-          left_delta = i;
-        break;
+  {
+      int offset = (final_rect.top * bytesPerRow + final_rect.left * bytesPerPixel) / sizeof(UINT32);
+      UINT32* o_ptr = (UINT32*)m_frameBuffer->getBuffer() + offset;
+      UINT32* n_ptr = (UINT32*)m_screenDriver->getScreenBuffer()->getBuffer() + offset;
+      int uint32_in_row = bytes_in_row / sizeof(UINT32);
+      int left_delta = uint32_in_row - 1;
+      int right_delta = 0;
+      for (int y = final_rect.top; y < final_rect.bottom; y++) {
+          for (int i = 0; i < uint32_in_row - 1; i++) {
+              if (n_ptr[i] != o_ptr[i]) {
+                  if (i < left_delta)
+                      left_delta = i;
+                  break;
+              }
+          }
+          for (int i = uint32_in_row - 1; i > 0; i--) {
+              if (n_ptr[i] != o_ptr[i]) {
+                  if (i > right_delta)
+                      right_delta = i;
+                  break;
+              }
+          }
+          n_ptr += bytesPerRow;
+          o_ptr += bytesPerRow;
       }
-    }
-    for (int i = uint32_in_row - 1; i > 0; i--) {
-      if (n_ptr[i] != o_ptr[i]) {
-        if (i > right_delta)
-          right_delta = i;
-        break;
-      }
-    }
-    n_ptr += bytesPerRow;
-    o_ptr += bytesPerRow;
-  }
-  final_rect.right = final_rect.left + right_delta + 1;
-  final_rect.left += left_delta;
+      final_rect.right = final_rect.left + right_delta + 1;
+      final_rect.left += left_delta;
 
-  // Update the rectangle
-  rgn->addRect(&final_rect);
+      // Update the rectangle
+      rgn->addRect(&final_rect);
+  }
+
 }

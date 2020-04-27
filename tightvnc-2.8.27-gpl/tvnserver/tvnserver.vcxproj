@@ -378,6 +378,7 @@
   <ItemGroup>
     <ClCompile Include="BuildTime.cpp" />
     <ClCompile Include="tvnserver.cpp" />
+    <ClCompile Include="WinEventLog.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BuildTime.h" />

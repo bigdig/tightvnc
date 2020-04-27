@@ -21,6 +21,9 @@
     <ClCompile Include="tvnserver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="WinEventLog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BuildTime.h">

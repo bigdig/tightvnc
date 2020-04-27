@@ -270,6 +270,7 @@ void TightEncoder::sendFullColorRect(const Rect *rect,
   //   rgbData.resize(rect->area() * 3);
   // }
 
+  PixelFormat pf = fb->getPixelFormat();
   _ASSERT( shouldPackPixels(&pf) );
   std::vector<UINT8> rgbData(rect->area() * 3);
   if (shouldPackPixels(&pf)){
@@ -284,9 +285,9 @@ void TightEncoder::sendFullColorRect(const Rect *rect,
     for (int y = 0; y < rectHeight; y++) {
       for(int j = 0; j < rectWidth; j++){
         PIXEL_T pix = src[j];
-        *dst++ = (UINT8)(pix >> pf->redShift);
-        *dst++ = (UINT8)(pix >> pf->greenShift);
-        *dst++ = (UINT8)(pix >> pf->blueShift);
+        *dst++ = (UINT8)(pix >> pf.redShift);
+        *dst++ = (UINT8)(pix >> pf.greenShift);
+        *dst++ = (UINT8)(pix >> pf.blueShift);
       }
       src += fbStride;
     }  
@@ -362,11 +363,11 @@ void TightEncoder::packPixels(UINT8 *buf, int count, const PixelFormat *pf)
   //   *dst++ = (UINT8)(pix >> pf->blueShift);
   // }
   while (count--) {
-    pix = * (UINT32*)(void*)buf
-    buf += 4;
-    *dst++ = (UINT8)(pix >> pf->redShift);
-    *dst++ = (UINT8)(pix >> pf->greenShift);
-    *dst++ = (UINT8)(pix >> pf->blueShift);
+      pix = *(UINT32*)(void*)buf;
+      buf += 4;
+      *dst++ = (UINT8)(pix >> pf->redShift);
+      *dst++ = (UINT8)(pix >> pf->greenShift);
+      *dst++ = (UINT8)(pix >> pf->blueShift);
   }  
 }
 
@@ -491,7 +492,7 @@ void TightEncoder::encodeIndexedRect(const Rect *rect, const FrameBuffer *fb,
         oldColor = *src;
       }
       *src++;
-      *out++ = index;
+      *dst++ = index;
       //out->writeUInt8(index);
     }
     src += skipPixels;
