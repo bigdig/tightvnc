@@ -254,20 +254,42 @@ void TightEncoder::sendFullColorRect(const Rect *rect,
   const int zlibStreamId = ZLIB_STREAM_RAW;
   m_output->writeUInt8(zlibStreamId << 4);
 
-  // Prepare output buffer.
-  int dataLen = rect->area() * sizeof(PIXEL_T);
-  // FIXME: Use char[] instead?
-  std::vector<UINT8> rgbData(dataLen);
+  // // Prepare output buffer.
+  // int dataLen = rect->area() * sizeof(PIXEL_T);
+  // // FIXME: Use char[] instead?
+  // std::vector<UINT8> rgbData(dataLen);
 
-  // Get pixels from the frame buffer.
-  copyPixels<PIXEL_T>(rect, fb, &rgbData.front());
-  _ASSERT(rgbData.size() == dataLen);
+  // // Get pixels from the frame buffer.
+  // copyPixels<PIXEL_T>(rect, fb, &rgbData.front());
+  // _ASSERT(rgbData.size() == dataLen);
 
-  // Pack pixels into 24-bit samples if necessary.
-  PixelFormat pf = fb->getPixelFormat();
-  if (shouldPackPixels(&pf)) {
-    packPixels(&rgbData.front(), rect->area(), &pf);
-    rgbData.resize(rect->area() * 3);
+  // // Pack pixels into 24-bit samples if necessary.
+  // PixelFormat pf = fb->getPixelFormat();
+  // if (shouldPackPixels(&pf)) {
+  //   packPixels(&rgbData.front(), rect->area(), &pf);
+  //   rgbData.resize(rect->area() * 3);
+  // }
+
+  _ASSERT( shouldPackPixels(&pf) );
+  std::vector<UINT8> rgbData(rect->area() * 3);
+  if (shouldPackPixels(&pf)){
+    const int rectWidth = rect->getWidth();
+    const int rectHeight = rect->getHeight();
+
+    const PIXEL_T *src = (const PIXEL_T *)fb->getBufferPtr(rect->left, rect->top);
+    const int fbStride = fb->getDimension().width;
+
+    UINT8* dst = &rgbData.front();
+
+    for (int y = 0; y < rectHeight; y++) {
+      for(int j = 0; j < rectWidth; j++){
+        PIXEL_T pix = src[j];
+        *dst++ = (UINT8)(pix >> pf->redShift);
+        *dst++ = (UINT8)(pix >> pf->greenShift);
+        *dst++ = (UINT8)(pix >> pf->blueShift);
+      }
+      src += fbStride;
+    }  
   }
 
   // Compress and send.
@@ -322,23 +344,30 @@ void TightEncoder::packPixels(UINT8 *buf, int count, const PixelFormat *pf)
   UINT8 *dst = buf;
   UINT32 pix;
 
+  // while (count--) {
+  //   if (!pf->bigEndian) {
+  //     pix = (UINT32)buf[3] << 24 |
+  //           (UINT32)buf[2] << 16 |
+  //           (UINT32)buf[1] << 8 |
+  //           (UINT32)buf[0];
+  //   } else {
+  //     pix = (UINT32)buf[0] << 24 |
+  //           (UINT32)buf[1] << 16 |
+  //           (UINT32)buf[2] << 8 |
+  //           (UINT32)buf[3];
+  //   }
+  //   buf += 4;
+  //   *dst++ = (UINT8)(pix >> pf->redShift);
+  //   *dst++ = (UINT8)(pix >> pf->greenShift);
+  //   *dst++ = (UINT8)(pix >> pf->blueShift);
+  // }
   while (count--) {
-    if (!pf->bigEndian) {
-      pix = (UINT32)buf[3] << 24 |
-            (UINT32)buf[2] << 16 |
-            (UINT32)buf[1] << 8 |
-            (UINT32)buf[0];
-    } else {
-      pix = (UINT32)buf[0] << 24 |
-            (UINT32)buf[1] << 16 |
-            (UINT32)buf[2] << 8 |
-            (UINT32)buf[3];
-    }
+    pix = * (UINT32*)(void*)buf
     buf += 4;
     *dst++ = (UINT8)(pix >> pf->redShift);
     *dst++ = (UINT8)(pix >> pf->greenShift);
     *dst++ = (UINT8)(pix >> pf->blueShift);
-  }
+  }  
 }
 
 template <class PIXEL_T>
@@ -451,6 +480,8 @@ void TightEncoder::encodeIndexedRect(const Rect *rect, const FrameBuffer *fb,
   const int h = rect->getHeight();
   const int skipPixels = fb->getDimension().width - w;
 
+  std::vector<UINT8> indexData(w*h);
+  UINT8* dst = &indexData.front();
   UINT8 index = m_pal.getIndex(*src);
   PIXEL_T oldColor = 0;
   for (int y = 0; y < h; y++) {
@@ -460,10 +491,12 @@ void TightEncoder::encodeIndexedRect(const Rect *rect, const FrameBuffer *fb,
         oldColor = *src;
       }
       *src++;
-      out->writeUInt8(index);
+      *out++ = index;
+      //out->writeUInt8(index);
     }
     src += skipPixels;
   }
+  out->writeFully(dst,w*h);
 }
 
 void TightEncoder::sendCompressed(const char *data, size_t dataLen,
