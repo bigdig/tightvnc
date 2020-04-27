@@ -33,6 +33,7 @@
 
 # directory
 /build/
+.vs/
 *.suo
 *.user
 _ReSharper.*/
