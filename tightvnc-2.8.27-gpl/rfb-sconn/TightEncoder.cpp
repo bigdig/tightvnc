@@ -497,7 +497,7 @@ void TightEncoder::encodeIndexedRect(const Rect *rect, const FrameBuffer *fb,
     }
     src += skipPixels;
   }
-  out->writeFully(dst,w*h);
+  out->writeFully(&(indexData.front()),w*h);
 }
 
 void TightEncoder::sendCompressed(const char *data, size_t dataLen,

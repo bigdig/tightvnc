@@ -301,8 +301,8 @@ void UpdateFilter::updateChangedSubRect(Region *rgn, const Rect *rect)
                   break;
               }
           }
-          n_ptr += bytesPerRow;
-          o_ptr += bytesPerRow;
+          n_ptr += bytesPerRow/sizeof(UINT32);
+          o_ptr += bytesPerRow/sizeof(UINT32);
       }
       final_rect.right = final_rect.left + right_delta + 1;
       final_rect.left += left_delta;
